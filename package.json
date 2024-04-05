@@ -1,0 +1,11 @@
+{
+  "name": "xongroh-backend",
+  "version": "1.0.0",
+  "description": "A social-marketplace for creators.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Rupam Bora",
+  "license": "ISC"
+}
