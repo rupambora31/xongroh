@@ -9,7 +9,7 @@ const connectDB = async () => {
 
     // "connectionInstance": mongoose send a retun-object (response after connection)
     console.log(
-      `\n MongoDB Connected!! DB HOST: ${connectionInstance.connection.host}`
+      `\nMongoDB Connected!! DB HOST: ${connectionInstance.connection.host}`
     );
   } catch (error) {
     console.log("MongoDB connection FAILED! ", error);
