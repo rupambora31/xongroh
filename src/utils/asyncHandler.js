@@ -1,3 +1,6 @@
+// Higher order Function
+// I/P is a function and the O/P is also a function
+
 const asyncHandler = (requestHandler) => {
   return (req, res, next) => {
     Promise.resolve(requestHandler(req, res, next)).catch((err) => next(err));
