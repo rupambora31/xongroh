@@ -7,7 +7,7 @@ const connectDB = async () => {
       `${process.env.MONGODB_URI}/${DB_NAME}`
     );
 
-    // "connectionInstance": mongoose send a retun-object (response after connection)
+    // "connectionInstance": mongoose will send a return-object (response after connection)
     console.log(
       `\nMongoDB Connected!! DB HOST: ${connectionInstance.connection.host}`
     );
