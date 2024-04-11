@@ -1,7 +1,10 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  uploadOnCloudinary,
+  deleteImageFromCloudinary,
+} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 
@@ -210,4 +213,151 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.user?._id);
+  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "Invalid old password");
+  }
+
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
+});
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(new ApiResponse(200, req.user, "User fetched successfully"));
+});
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullName, email, bio, homeTown } = req.body;
+
+  if (!fullName || !email || !bio || !homeTown) {
+    throw new ApiError(400, "All fields are required");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        fullName,
+        email,
+        bio,
+        homeTown,
+      },
+    },
+    { new: true }
+  ).select("-password");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Account details updated successfully"));
+});
+
+// Helper function to extract the public ID from a Cloudinary URL
+// Assuming the URL format is something like:
+// https://res.cloudinary.com/<cloud-name>/image/upload/<public-id>.<format>
+function extractPublicIdFromUrl(url) {
+  const parts = url.split("/");
+  const publicIdWithFormat = parts[parts.length - 1];
+  const publicId = publicIdWithFormat.split(".")[0];
+  return publicId;
+}
+
+const updateUserDp = asyncHandler(async (req, res) => {
+  const dpLocalPath = req.file?.path;
+
+  if (!dpLocalPath) {
+    throw new ApiError(400, "DP file is missing");
+  }
+
+  // Retrieve the old picture URL
+  const user = await User.findById(req.user?._id).select("coverPic");
+  const oldCoverPicUrl = user.coverPic;
+
+  // Extract the public ID from the old picture URL
+  const oldPublicId = extractPublicIdFromUrl(oldCoverPicUrl);
+
+  // Delete the old picture from Cloudinary
+  if (oldPublicId) {
+    await deleteImageFromCloudinary(oldPublicId);
+  }
+
+  const dp = await uploadOnCloudinary(dpLocalPath);
+
+  if (!dp.url) {
+    throw new ApiError(400, "Error while uploading on avatar");
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        dp: dp.url,
+      },
+    },
+    { new: true }
+  ).select("-password");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "Dp image updated successfully"));
+});
+
+const updateUserCoverPic = asyncHandler(async (req, res) => {
+  const coverPicLocalPath = req.file?.path;
+
+  if (!coverPicLocalPath) {
+    throw new ApiError(400, "CoverPic file is missing");
+  }
+
+  const user = await User.findById(req.user?._id).select("coverPic");
+  const oldCoverPicUrl = user.coverPic;
+  const oldPublicId = extractPublicIdFromUrl(oldCoverPicUrl);
+
+  if (oldPublicId) {
+    await deleteImageFromCloudinary(oldPublicId);
+  }
+
+  const coverPic = await uploadOnCloudinary(coverPicLocalPath);
+
+  if (!coverPic.url) {
+    throw new ApiError(400, "Error while uploading on avatar");
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        coverPic: coverPic.url,
+      },
+    },
+    { new: true }
+  ).select("-password");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, updatedUser, "coverPic image updated successfully")
+    );
+});
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
+  updateAccountDetails,
+  updateUserDp,
+  updateUserCoverPic,
+};
