@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   changeCurrentPassword,
   getCurrentUser,
+  getUserProfile,
   loginUser,
   logoutUser,
   refreshAccessToken,
@@ -18,7 +19,7 @@ const router = Router();
 router.route("/register").post(
   upload.fields([
     {
-      name: "dp",
+      name: "dp", //name of the frontend field
       maxCount: 1,
     },
     {
@@ -42,5 +43,7 @@ router.route("/dp").patch(verifyJWT, upload.single("dp"), updateUserDp);
 router
   .route("/cover-image")
   .patch(verifyJWT, upload.single("coverPic"), updateUserCoverPic);
+
+router.route("/profile/:username").get(verifyJWT, getUserProfile);
 
 export default router;

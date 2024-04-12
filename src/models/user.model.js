@@ -11,6 +11,10 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
       index: true,
+      match: [
+        /^[a-zA-Z0-9]+$/,
+        "Username can only contain letters and numbers",
+      ],
     },
     email: {
       type: String,
@@ -18,6 +22,7 @@ const userSchema = new Schema(
       unique: [true, "Email already exists"],
       lowecase: true,
       trim: true,
+      match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
     },
     fullName: {
       type: String,

@@ -262,8 +262,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "Account details updated successfully"));
 });
 
-// Helper function to extract the public ID from a Cloudinary URL
-// Assuming the URL format is something like:
+// function to extract the public ID from a Cloudinary URL
 // https://res.cloudinary.com/<cloud-name>/image/upload/<public-id>.<format>
 function extractPublicIdFromUrl(url) {
   const parts = url.split("/");
@@ -350,6 +349,73 @@ const updateUserCoverPic = asyncHandler(async (req, res) => {
     );
 });
 
+const getUserProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+
+  if (!username?.trim()) {
+    throw new ApiError(400, "Username is missing!");
+  }
+  const profile = await User.aggregate([
+    {
+      $match: {
+        username: username?.toLowerCase(), //first-pipeline
+      },
+    },
+    {
+      $lookup: {
+        from: "supports", //model-name=> (lowercase & plural)
+        localField: _id,
+        foreignField: "supporting",
+        as: "supporter",
+      },
+    },
+    {
+      $lookup: {
+        from: "supports",
+        localField: _id,
+        foreignField: "supporter",
+        as: "supporting",
+      },
+    },
+    {
+      $addFields: {
+        supportersCount: {
+          $size: "$supporter",
+        },
+        supportingCount: {
+          $size: "supporting",
+        },
+        isSupporter: {
+          $cond: {
+            if: { $in: [req.user?._id, "$supporter.supporter"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        username: 1,
+        supportersCount: 1,
+        supportingCount: 1,
+        isSupporter: 1,
+        dp: 1,
+        coverPic: 1,
+      },
+    },
+  ]);
+  if (!profile?.length) {
+    throw new ApiError(404, "Profile does not exist!");
+  }
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, profile[0], "User Profile fetched successfully!")
+    );
+});
+
 export {
   registerUser,
   loginUser,
@@ -360,4 +426,5 @@ export {
   updateAccountDetails,
   updateUserDp,
   updateUserCoverPic,
+  getUserProfile,
 };
