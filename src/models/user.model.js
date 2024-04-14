@@ -22,7 +22,7 @@ const userSchema = new Schema(
       unique: [true, "Email already exists"],
       lowecase: true,
       trim: true,
-      match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
+      match: [/^\S+@\S+\.\S+$/, "Please provide a valid email address"],
     },
     fullName: {
       type: String,
@@ -32,7 +32,6 @@ const userSchema = new Schema(
     },
     dp: {
       type: String, // cloudinary url
-      required: true,
     },
     coverPic: {
       type: String, // cloudinary url

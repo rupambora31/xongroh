@@ -16,19 +16,7 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.route("/register").post(
-  upload.fields([
-    {
-      name: "dp", //name of the frontend field
-      maxCount: 1,
-    },
-    {
-      name: "coverPic",
-      maxCount: 1,
-    },
-  ]),
-  registerUser
-);
+router.route("/register").post(registerUser);
 
 router.route("/login").post(loginUser);
 

@@ -41,45 +41,28 @@ async function uploadImage(filePath) {
 }
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { fullName, email, username, bio, homeTown, password } = req.body;
+  const { fullName, email, homeTown, password } = req.body;
 
   // Validate input fields
-  if (!fullName || !email || !username || !password) {
+  if (!fullName || !email || !homeTown || !password) {
     throw new ApiError(400, "All fields are required!");
   }
 
-  const existedUser = await User.findOne({
-    $or: [{ username: username.toLowerCase() }, { email }],
-  });
+  const existedUser = await User.findOne({ email });
 
   if (existedUser) {
-    throw new ApiError(409, "User with email or username already exists!");
+    throw new ApiError(409, "User with this email already exists!");
   }
 
-  // Safely access dp and coverPic paths
-  const dpLocalPath = req.files?.dp?.[0]?.path ?? null;
-  const coverPicLocalPath = req.files?.coverPic?.[0]?.path ?? null;
-
-  if (!dpLocalPath) {
-    throw new ApiError(400, "Dp is required!");
-  }
-
-  // Upload images only if paths are provided
-  const dp = dpLocalPath ? await uploadOnCloudinary(dpLocalPath) : null;
-  const coverPic = coverPicLocalPath
-    ? await uploadOnCloudinary(coverPicLocalPath)
-    : null;
-
-  // Create user with or without coverPic
   const user = await User.create({
     fullName,
-    dp: dp.url,
-    coverPic: coverPic ? coverPic.url : "", // Use coverPic.url if available, else empty string
     email,
-    username: username.toLowerCase(),
+    username: email.split("@")[0].toLowerCase(),
     password,
-    bio: bio?.trim() || "",
-    homeTown: homeTown?.trim() || "",
+    bio: "",
+    homeTown: homeTown.trim(),
+    dp: "",
+    coverPic: "",
   });
   const createdUser = await User.findById(user._id).select(
     "-password -refreshToken"
